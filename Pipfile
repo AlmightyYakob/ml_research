@@ -11,6 +11,8 @@ black = "*"
 numpy = "*"
 gym = "*"
 keras = "*"
+keras-rl = "*"
+h5py = "*"
 
 [requires]
 python_version = "3.6"
