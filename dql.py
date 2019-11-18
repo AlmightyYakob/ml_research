@@ -1,6 +1,6 @@
 import gym_pomdp  # NOQA
+import gym_maze  # NOQA
 
-import time
 import gym
 
 from keras.models import Sequential
@@ -17,17 +17,23 @@ def get_model(env):
     model.add(Flatten(input_shape=(1, *env.observation_space.shape)))
     model.add(Dense(16))
     model.add(Activation("relu"))
+    model.add(Dense(16))
+    model.add(Activation("relu"))
     model.add(Dense(env.action_space.n))
     model.add(Activation("linear"))
     return model
 
 
 def main():
+    # env = gym.make("Breakout-ram-v0")
+    # env = gym.make("MountainCar-v0")
     env = gym.make("CartPole-v0")
     model = get_model(env)
 
-    policy = EpsGreedyQPolicy()
-    memory = SequentialMemory(limit=50000, window_length=1)
+    print(type(env.action_space))
+
+    policy = EpsGreedyQPolicy(eps=0.1)
+    memory = SequentialMemory(limit=100000, window_length=1)
     dqn = DQNAgent(
         model=model,
         nb_actions=env.action_space.n,
@@ -39,6 +45,8 @@ def main():
     dqn.compile(Adam(lr=1e-3), metrics=["mae"])
 
     dqn.fit(env, nb_steps=10000, visualize=False, verbose=2)
+
+    env.reset()
     dqn.test(env, nb_episodes=5, visualize=True)
 
     env.close()
