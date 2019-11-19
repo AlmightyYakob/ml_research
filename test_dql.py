@@ -1,6 +1,3 @@
-import gym_pomdp  # NOQA
-import gym_maze  # NOQA
-
 import gym
 
 from keras.models import Sequential

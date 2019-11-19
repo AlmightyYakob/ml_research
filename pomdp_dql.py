@@ -1,4 +1,3 @@
-import pomdp_env  # NOQA
 import gym
 
 from keras.models import Sequential
