@@ -5,14 +5,36 @@ from gym import spaces
 from random import randint
 
 
+DEFAULT_ENV_HISTORY_LENGTH = 50
+
+
 class POMDPEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
-    # Observations = (z1, z2)
+
+    # Each observation is a history of the possible
+    # observations (z1, z2) so far.
+    # E.g.
+    # [
+    # (0,0),    <
+    # (0,0),    <
+    # (0,0),    < Represents lack of observation so far
+    # (0,0),    <
+    # (0,0),    <
+    # (0, 1),
+    # (0, 1),
+    # (1, 0),
+    # (0, 1),
+    # (1, 0)
+    # ]
+
+    # TODO: FIX TO MATCH ABOVE
     observation_space = spaces.Discrete(2)
+    # observation_space.shape = (2,)
     observation_space.shape = (1, 2)
 
     # Actions = (a, b)
     action_space = spaces.Discrete(2)
+    # observation_space.shape = (2,)
     observation_space.shape = (1, 2)
 
     reward_range = (-100, 100)
@@ -41,6 +63,7 @@ class POMDPEnv(gym.Env):
 
     states = np.arange(5)
     actions = np.arange(2)
+    observations = np.arange(2)
 
     # For each state, weights are in the form (z1, z2)
     state_z_weights = np.array(
@@ -49,12 +72,18 @@ class POMDPEnv(gym.Env):
 
     state_rewards = np.array([0, 0, 100, -100, 0])
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        # Assign observation space to be Discrete(history_length),
+        # with shape of (history_length, 2)
+
         self.current_state = randint(0, 1)
         self.done = False
 
     def observe(self):
-        choice = np.random.choice([0, 1], p=self.state_z_weights[self.current_state])
+        choice = np.random.choice(
+            self.observations, p=self.state_z_weights[self.current_state]
+        )
+        choice = np.eye(self.observation_space.n, dtype=np.uint8)[choice]
         return choice
 
     def step(self, action: int):
@@ -66,7 +95,7 @@ class POMDPEnv(gym.Env):
         reward = self.state_rewards[self.current_state]
         self.done = True if self.current_state == 4 else False
 
-        return (observation, reward, self.done, None)
+        return (observation, reward, self.done, {})
 
     def reset(self):
         self.__init__()
