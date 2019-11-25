@@ -32,8 +32,8 @@ def lstm_model(env):
 
 
 def bootstrapped_train(env):
-    # model = default_model(env)
-    model = lstm_model(env)
+    model = default_model(env)
+    # model = lstm_model(env)
 
     policy = EpsGreedyQPolicy(eps=0.1)
     memory = SequentialMemory(limit=100000, window_length=1)
@@ -47,6 +47,7 @@ def bootstrapped_train(env):
     )
     dqn.compile(Adam(lr=1e-3), metrics=["mae"])
 
+    print(model.summary())
     dqn.fit(env, nb_steps=5000, visualize=False, verbose=1)
 
     env.reset()

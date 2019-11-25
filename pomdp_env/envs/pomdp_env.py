@@ -3,7 +3,7 @@ import numpy as np
 
 from gym import spaces
 from random import randint
-
+from collections import deque
 
 DEFAULT_ENV_HISTORY_LENGTH = 50
 
@@ -27,15 +27,9 @@ class POMDPEnv(gym.Env):
     # (1, 0)
     # ]
 
-    # TODO: FIX TO MATCH ABOVE
-    observation_space = spaces.Discrete(2)
-    # observation_space.shape = (2,)
-    observation_space.shape = (1, 2)
-
     # Actions = (a, b)
     action_space = spaces.Discrete(2)
-    # observation_space.shape = (2,)
-    observation_space.shape = (1, 2)
+    action_space.shape = (1, 2)
 
     reward_range = (-100, 100)
 
@@ -72,25 +66,36 @@ class POMDPEnv(gym.Env):
 
     state_rewards = np.array([0, 0, 100, -100, 0])
 
-    def __init__(self, **kwargs):
+    def __init__(self, history_length=DEFAULT_ENV_HISTORY_LENGTH, **kwargs):
         # Assign observation space to be Discrete(history_length),
         # with shape of (history_length, 2)
 
+        self.observation_space = spaces.Discrete(history_length)
+        self.observation_space.shape = (history_length, 2)
+        self.history = deque([(0, 0)] * history_length, maxlen=history_length)
+
         self.current_state = randint(0, 1)
         self.done = False
+        self.observed_in_current_state = False
 
     def observe(self):
-        choice = np.random.choice(
-            self.observations, p=self.state_z_weights[self.current_state]
-        )
-        choice = np.eye(self.observation_space.n, dtype=np.uint8)[choice]
-        return choice
+        if not self.observed_in_current_state:
+            choice = np.random.choice(
+                self.observations, p=self.state_z_weights[self.current_state]
+            )
+            choice = np.eye(self.observation_space.shape[1], dtype=np.uint8)[choice]
+
+            self.history.append(tuple(choice))
+            self.observed_in_current_state = True
+        return self.history
 
     def step(self, action: int):
         p_matrix = self.action_matrices[action]
         self.current_state = np.random.choice(
             self.states, p=p_matrix[self.current_state]
         )
+        self.observed_in_current_state = False
+
         observation = self.observe()
         reward = self.state_rewards[self.current_state]
         self.done = True if self.current_state == 4 else False
